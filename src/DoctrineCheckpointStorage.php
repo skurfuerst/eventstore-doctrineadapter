@@ -19,12 +19,24 @@ use Neos\EventStore\ProvidesSetupInterface;
 final class DoctrineCheckpointStorage implements CheckpointStorageInterface, ProvidesSetupInterface
 {
 
-    public function __construct(
-        private readonly Connection $connection,
-        private readonly string $tableName,
-        private readonly string $subscriberId,
-    ) {}
-
+    /**
+     * @readonly
+     */
+    private Connection $connection;
+    /**
+     * @readonly
+     */
+    private string $tableName;
+    /**
+     * @readonly
+     */
+    private string $subscriberId;
+    public function __construct(Connection $connection, string $tableName, string $subscriberId)
+    {
+        $this->connection = $connection;
+        $this->tableName = $tableName;
+        $this->subscriberId = $subscriberId;
+    }
     public function acquireLock(): SequenceNumber
     {
         if ($this->connection->isTransactionActive()) {
@@ -48,7 +60,7 @@ final class DoctrineCheckpointStorage implements CheckpointStorageInterface, Pro
             $this->connection->rollBack();
         }
         if (!is_numeric($highestAppliedSequenceNumber)) {
-            throw new CheckpointException(sprintf('Failed to fetch highest applied sequence number for subscriber "%s". Please run %s::setup()', $this->subscriberId, $this::class), 1652279139);
+            throw new CheckpointException(sprintf('Failed to fetch highest applied sequence number for subscriber "%s". Please run %s::setup()', $this->subscriberId, get_class($this)), 1652279139);
         }
         return SequenceNumber::fromInteger((int)$highestAppliedSequenceNumber);
     }
@@ -67,7 +79,7 @@ final class DoctrineCheckpointStorage implements CheckpointStorageInterface, Pro
                 ['subscriberid' => $this->subscriberId]
             );
         } catch (DBALException $exception) {
-            throw new CheckpointException(sprintf('Failed to update and commit highest applied sequence number for subscriber "%s". Please run %s::setup()', $this->subscriberId, $this::class), 1652279375, $exception);
+            throw new CheckpointException(sprintf('Failed to update and commit highest applied sequence number for subscriber "%s". Please run %s::setup()', $this->subscriberId, get_class($this)), 1652279375, $exception);
         }
     }
 
@@ -77,7 +89,7 @@ final class DoctrineCheckpointStorage implements CheckpointStorageInterface, Pro
             'subscriberId' => $this->subscriberId
         ]);
         if (!is_numeric($highestAppliedSequenceNumber)) {
-            throw new CheckpointException(sprintf('Failed to fetch highest applied sequence number for subscriber "%s". Please run %s::setup()', $this->subscriberId, $this::class), 1652279427);
+            throw new CheckpointException(sprintf('Failed to fetch highest applied sequence number for subscriber "%s". Please run %s::setup()', $this->subscriberId, get_class($this)), 1652279427);
         }
         return SequenceNumber::fromInteger((int)$highestAppliedSequenceNumber);
     }

@@ -32,12 +32,23 @@ use Neos\EventStore\ProvidesSetupInterface;
 
 final class DoctrineEventStore implements EventStoreInterface, ProvidesSetupInterface, ProvidesStatusInterface
 {
-    public function __construct(
-        private readonly Connection $connection,
-        private readonly string $eventTableName,
-    ) {}
-
-    public function load(VirtualStreamName|StreamName $streamName): EventStreamInterface
+    /**
+     * @readonly
+     */
+    private Connection $connection;
+    /**
+     * @readonly
+     */
+    private string $eventTableName;
+    public function __construct(Connection $connection, string $eventTableName)
+    {
+        $this->connection = $connection;
+        $this->eventTableName = $eventTableName;
+    }
+    /**
+     * @param \Neos\EventStore\Model\EventStream\VirtualStreamName|\Neos\EventStore\Model\Event\StreamName $streamName
+     */
+    public function load($streamName): EventStreamInterface
     {
         $this->reconnectDatabaseConnection();
         $queryBuilder = $this->connection->createQueryBuilder()
@@ -45,15 +56,27 @@ final class DoctrineEventStore implements EventStoreInterface, ProvidesSetupInte
             ->from($this->eventTableName)
             ->orderBy('sequencenumber', 'ASC');
 
-        $queryBuilder = match ($streamName::class) {
-            StreamName::class => $queryBuilder->andWhere('stream = :streamName')->setParameter('streamName', $streamName->value),
-            VirtualStreamName::class => match ($streamName->type) {
-                VirtualStreamType::ALL => $queryBuilder,
-                VirtualStreamType::CATEGORY => $queryBuilder->andWhere('stream LIKE :streamNamePrefix')->setParameter('streamNamePrefix', $streamName->value . '%'),
-                VirtualStreamType::CORRELATION_ID => $queryBuilder->andWhere('correlationIdentifier LIKE :correlationId')->setParameter('correlationId', $streamName->value),
-            },
-            default => $queryBuilder,
-        };
+        switch (get_class($streamName)) {
+            case StreamName::class:
+                $queryBuilder = $queryBuilder->andWhere('stream = :streamName')->setParameter('streamName', $streamName->value);
+                break;
+            case VirtualStreamName::class:
+                switch ($streamName->type) {
+                    case VirtualStreamType::ALL:
+                        $queryBuilder = $queryBuilder;
+                        break;
+                    case VirtualStreamType::CATEGORY:
+                        $queryBuilder = $queryBuilder->andWhere('stream LIKE :streamNamePrefix')->setParameter('streamNamePrefix', $streamName->value . '%');
+                        break;
+                    case VirtualStreamType::CORRELATION_ID:
+                        $queryBuilder = $queryBuilder->andWhere('correlationIdentifier LIKE :correlationId')->setParameter('correlationId', $streamName->value);
+                        break;
+                }
+                break;
+            default:
+                $queryBuilder = $queryBuilder;
+                break;
+        }
         return BatchEventStreamInterface::create(DoctrineEventStream::create($queryBuilder), 100);
     }
 

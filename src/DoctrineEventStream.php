@@ -18,14 +18,31 @@ use Neos\EventStore\Model\Event\Version;
 final class DoctrineEventStream implements EventStreamInterface
 {
 
-    private function __construct(
-        private QueryBuilder $queryBuilder,
-        private readonly ?SequenceNumber $minimumSequenceNumber,
-        private readonly ?SequenceNumber $maximumSequenceNumber,
-        private readonly ?int $limit,
-        private readonly bool $backwards,
-    ) {}
-
+    private QueryBuilder $queryBuilder;
+    /**
+     * @readonly
+     */
+    private ?SequenceNumber $minimumSequenceNumber;
+    /**
+     * @readonly
+     */
+    private ?SequenceNumber $maximumSequenceNumber;
+    /**
+     * @readonly
+     */
+    private ?int $limit;
+    /**
+     * @readonly
+     */
+    private bool $backwards;
+    private function __construct(QueryBuilder $queryBuilder, ?SequenceNumber $minimumSequenceNumber, ?SequenceNumber $maximumSequenceNumber, ?int $limit, bool $backwards)
+    {
+        $this->queryBuilder = $queryBuilder;
+        $this->minimumSequenceNumber = $minimumSequenceNumber;
+        $this->maximumSequenceNumber = $maximumSequenceNumber;
+        $this->limit = $limit;
+        $this->backwards = $backwards;
+    }
     public static function create(QueryBuilder $queryBuilder): self
     {
         return new self($queryBuilder, null, null, null, false);
@@ -90,12 +107,7 @@ final class DoctrineEventStream implements EventStreamInterface
                 throw new \RuntimeException(sprintf('Failed to parse "recordetat" value of "%s" in event "%s"', $row['recordedat'], $row['id']), 1651744355);
             }
             yield new EventEnvelope(
-                new Event(
-                    EventId::fromString($row['id']),
-                    EventType::fromString($row['type']),
-                    EventData::fromString($row['payload']),
-                    EventMetadata::fromJson($row['metadata']),
-                ),
+                new Event(EventId::fromString($row['id']), EventType::fromString($row['type']), EventData::fromString($row['payload']), EventMetadata::fromJson($row['metadata'])),
                 StreamName::fromString($row['stream']),
                 Version::fromInteger((int)$row['version']),
                 SequenceNumber::fromInteger((int)$row['sequencenumber']),
