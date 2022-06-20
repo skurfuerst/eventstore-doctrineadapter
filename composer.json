@@ -1,0 +1,20 @@
+{
+    "name": "neos/eventstore-doctrineadapter",
+    "description": "Doctrine DBAL based implementation for the neos/event-store",
+    "type": "library",
+    "require": {
+        "neos/eventstore": "*",
+        "doctrine/dbal": "^2 || ^3",
+        "webmozart/assert": "^1.10"
+    },
+    "require-dev": {
+        "roave/security-advisories": "dev-latest",
+        "phpunit/phpunit": "^9"
+    },
+    "autoload": {
+        "psr-4": {
+            "Neos\\EventStore\\DoctrineAdapter\\": "src/",
+            "Neos\\EventStore\\DoctrineAdapter\\Tests\\": "tests/"
+        }
+    }
+}
