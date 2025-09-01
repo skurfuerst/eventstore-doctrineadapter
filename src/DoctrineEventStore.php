@@ -142,7 +142,7 @@ final class DoctrineEventStore implements EventStoreInterface
     public function status(): Status
     {
         try {
-            $this->connection->connect();
+            $this->connection->executeQuery('SELECT 1');
         } catch (DbalException $e) {
             return Status::error(sprintf('Failed to connect to database: %s', $e->getMessage()));
         }
