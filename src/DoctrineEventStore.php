@@ -174,7 +174,7 @@ final class DoctrineEventStore implements EventStoreInterface
         }
         $tableSchema = $schemaManager->introspectTable($this->eventTableName);
         $fromSchema = new Schema([$tableSchema], [], $schemaManager->createSchemaConfig());
-        $schemaDiff = (new Comparator())->compareSchemas($fromSchema, $this->createEventStoreSchema($schemaManager));
+        $schemaDiff = (new Comparator($this->connection->getDatabasePlatform()))->compareSchemas($fromSchema, $this->createEventStoreSchema($schemaManager));
         return $platform->getAlterSchemaSQL($schemaDiff);
     }
 
