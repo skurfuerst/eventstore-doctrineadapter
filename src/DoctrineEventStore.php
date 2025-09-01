@@ -255,7 +255,7 @@ final class DoctrineEventStore implements EventStoreInterface
     private function getStreamVersion(StreamName $streamName): MaybeVersion
     {
         $result = $this->connection->createQueryBuilder()
-            ->select('MAX(version)')
+            ->addSelectLiteral('MAX(version)')
             ->from($this->eventTableName)
             ->where('stream = :streamName')
             ->setParameter('streamName', $streamName->value)
@@ -280,7 +280,7 @@ final class DoctrineEventStore implements EventStoreInterface
                 'version' => $version->value,
                 'type' => $event->type->value,
                 'payload' => $event->data->value,
-                'metadata' => $event->metadata?->toJson(),
+                'metadata' => $event->metadata?->value,
                 'causationid' => $event->causationId?->value,
                 'correlationid' => $event->correlationId?->value,
                 'recordedat' => $this->clock->now(),
