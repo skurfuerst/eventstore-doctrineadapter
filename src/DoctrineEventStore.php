@@ -3,6 +3,7 @@ declare(strict_types=1);
 namespace Neos\EventStore\DoctrineAdapter;
 
 use DateTimeImmutable;
+use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Driver\Exception as DriverException;
 use Doctrine\DBAL\Exception as DbalException;
@@ -75,7 +76,7 @@ final class DoctrineEventStore implements EventStoreInterface
             },
         };
         if ($filter !== null && $filter->eventTypes !== null) {
-            $queryBuilder->andWhere('type IN (:eventTypes)')->setParameter('eventTypes', $filter->eventTypes->toStringArray(), Connection::PARAM_STR_ARRAY);
+            $queryBuilder->andWhere('type IN (:eventTypes)')->setParameter('eventTypes', $filter->eventTypes->toStringArray(), ArrayParameterType::STRING);
         }
         return BatchEventStream::create(DoctrineEventStream::create($queryBuilder), 100);
     }
